@@ -265,7 +265,10 @@
   .menu-list__list-item:where(:not([slot='overflow'])) > .menu-list__submenu,
   .overflow-menu::part(overflow) {
     --submenu-content-opacity: 0;
-    --submenu-content-animation: opacity calc(var(--submenu-animation-speed) * 0.75) var(--animation-easing);
+    --submenu-item-translate: -1rem;
+    --submenu-item-delay-step: calc(var(--submenu-animation-speed) / 10);
+    --submenu-content-animation: opacity calc(var(--submenu-animation-speed) * 0.75) var(--animation-easing),
+      transform calc(var(--submenu-animation-speed) * 0.75) var(--animation-easing);
 
     box-shadow: var(--shadow-drawer);
     visibility: hidden;
@@ -280,6 +283,38 @@
     transition: clip-path var(--submenu-animation-speed) var(--ease-out-cubic);
   }
 
+  .menu-list__submenu-inner .mega-menu__list > li,
+  .menu-list__submenu-inner .mega-menu__content-list > li {
+    opacity: 0;
+    transform: translateX(var(--submenu-item-translate));
+    transition: var(--submenu-content-animation);
+  }
+
+  .menu-list__submenu-inner .mega-menu__list > li:nth-child(2),
+  .menu-list__submenu-inner .mega-menu__content-list > li:nth-child(2) {
+    transition-delay: calc(var(--submenu-item-delay-step) * 1);
+  }
+
+  .menu-list__submenu-inner .mega-menu__list > li:nth-child(3),
+  .menu-list__submenu-inner .mega-menu__content-list > li:nth-child(3) {
+    transition-delay: calc(var(--submenu-item-delay-step) * 2);
+  }
+
+  .menu-list__submenu-inner .mega-menu__list > li:nth-child(4),
+  .menu-list__submenu-inner .mega-menu__content-list > li:nth-child(4) {
+    transition-delay: calc(var(--submenu-item-delay-step) * 3);
+  }
+
+  .menu-list__submenu-inner .mega-menu__list > li:nth-child(5),
+  .menu-list__submenu-inner .mega-menu__content-list > li:nth-child(5) {
+    transition-delay: calc(var(--submenu-item-delay-step) * 4);
+  }
+
+  .menu-list__submenu-inner .mega-menu__list > li:nth-child(6),
+  .menu-list__submenu-inner .mega-menu__content-list > li:nth-child(6) {
+    transition-delay: calc(var(--submenu-item-delay-step) * 5);
+  }
+
   /* Show the submenus on hover */
   .menu-list__list-item:has([aria-expanded='true']) > .menu-list__submenu,
   /* Show the overflow menu when a menu item is hovered */
@@ -288,8 +323,21 @@
   .menu-list__submenu:is(:hover),
   .overflow-menu::part(overflow):hover {
     --submenu-content-opacity: 1;
+    --submenu-item-translate: 0;
 
     visibility: visible;
+  }
+
+  .menu-list__list-item:has([aria-expanded='true']) > .menu-list__submenu .menu-list__submenu-inner .mega-menu__list > li,
+  .menu-list__list-item:has([aria-expanded='true']) > .menu-list__submenu .menu-list__submenu-inner .mega-menu__content-list > li,
+  .overflow-menu:has([slot="overflow"] [aria-expanded='true'])::part(overflow) .menu-list__submenu-inner .mega-menu__list > li,
+  .overflow-menu:has([slot="overflow"] [aria-expanded='true'])::part(overflow) .menu-list__submenu-inner .mega-menu__content-list > li,
+  .menu-list__submenu:is(:hover) .menu-list__submenu-inner .mega-menu__list > li,
+  .menu-list__submenu:is(:hover) .menu-list__submenu-inner .mega-menu__content-list > li,
+  .overflow-menu::part(overflow):hover .menu-list__submenu-inner .mega-menu__list > li,
+  .overflow-menu::part(overflow):hover .menu-list__submenu-inner .mega-menu__content-list > li {
+    opacity: 1;
+    transform: none;
   }
 
   .menu-list__list-item:has([data-animating]) > .menu-list__submenu {

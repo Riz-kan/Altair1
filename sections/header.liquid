@@ -311,8 +311,9 @@
     z-index: var(--layer-overlay);
 
     &[transparent='not-sticky'][data-sticky-state='active'],
-    /* Only show opaque background when hovering over menu items with children (mega menu)
-       Multiple selectors for performance: each simple :has() check is faster than one complex selector with multiple conditions */
+    /* Only show opaque background when hovering over menu items with children (mega menu).
+       Multiple selectors for performance: each simple :has() check is faster than one complex selector with multiple conditions.
+       The [data-animating] state now persists until the submenu finishes collapsing so the header remains opaque throughout the close animation. */
     &:has(.mega-menu__list:hover),
     &:has(.menu-list__link[aria-haspopup]:is(:hover, [aria-expanded='true'], [data-animating])),
     &:has(.menu-list__list-item[slot='overflow'] .menu-list__link:is(:hover, [aria-expanded='true'], [data-animating])) {
@@ -400,6 +401,7 @@
     view-transition-name: sticky-header;
   }
 
+  /* data-animating persists while the submenu collapses so the sticky header stays hidden until the animation completes. */
   .header[data-sticky-state='idle'],
   .header[data-sticky-state='active'][data-animating] {
     opacity: 0;

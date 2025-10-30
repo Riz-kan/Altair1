@@ -265,6 +265,7 @@
   .menu-list__list-item:where(:not([slot='overflow'])) > .menu-list__submenu,
   .overflow-menu::part(overflow) {
     --submenu-content-opacity: 0;
+    --submenu-item-opacity: 0;
     --submenu-item-translate: -1rem;
     --submenu-item-delay-step: calc(var(--submenu-animation-speed) / 10);
     --submenu-content-animation: opacity calc(var(--submenu-animation-speed) * 0.75) var(--animation-easing),
@@ -285,9 +286,10 @@
 
   .menu-list__submenu-inner .mega-menu__list > li,
   .menu-list__submenu-inner .mega-menu__content-list > li {
-    opacity: 0;
+    opacity: var(--submenu-item-opacity, 1);
     transform: translateX(var(--submenu-item-translate));
     transition: var(--submenu-content-animation);
+    transition-delay: 0s;
   }
 
   .menu-list__submenu-inner .mega-menu__list > li:nth-child(2),
@@ -323,6 +325,7 @@
   .menu-list__submenu:is(:hover),
   .overflow-menu::part(overflow):hover {
     --submenu-content-opacity: 1;
+    --submenu-item-opacity: 1;
     --submenu-item-translate: 0;
 
     visibility: visible;

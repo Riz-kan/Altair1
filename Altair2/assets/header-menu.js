@@ -160,9 +160,39 @@ class HeaderMenu extends Component {
     item.ariaExpanded = 'false';
     item.setAttribute('data-animating', '');
 
-    setTimeout(() => {
+    // Keep the menu item flagged as animating until the submenu fully collapses.
+    const submenu = findSubmenu(item) ?? this.overflowMenu ?? null;
+    const duration = this.animationDelay;
+    let timeoutId = null;
+    let cleanedUp = false;
+
+    const cleanup = () => {
+      if (cleanedUp) return;
+      cleanedUp = true;
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId);
+      }
+      submenu?.removeEventListener('transitionend', handleTransitionEnd);
       item.removeAttribute('data-animating');
-    }, Math.max(0, this.animationDelay - 150)); // Start header transition 150ms before submenu finishes
+    };
+
+    const handleTransitionEnd = (event) => {
+      if (event.target !== submenu) return;
+      const property = event.propertyName?.toLowerCase() ?? '';
+      if (!property.endsWith('clip-path') && property !== 'height') return;
+      cleanup();
+    };
+
+    if (submenu) {
+      submenu.addEventListener('transitionend', handleTransitionEnd);
+    }
+
+    // Fallback to the configured animation duration in case transitionend does not fire.
+    if (duration > 0) {
+      timeoutId = window.setTimeout(cleanup, duration);
+    } else {
+      cleanup();
+    }
   };
 
   /**

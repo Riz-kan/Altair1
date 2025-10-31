@@ -1,0 +1,111 @@
+<!-- Scoped Full-Width Auto-Height Hero -->
+<section class="x-hero-superbloom" aria-label="Superbloom collection">
+  <style>
+    /* ===== Scoped strictly to .x-hero-superbloom ===== */
+    .x-hero-superbloom {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      isolation: isolate;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #fff;
+    }
+
+    /* Image: full width, height auto */
+    .x-hero-superbloom__bg {
+      width: 100%;
+      height: auto;
+      display: block;
+      
+    }
+
+    /* Overlay gradient for readability */
+    .x-hero-superbloom::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.15) 25%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.25) 95%);
+      pointer-events: none;
+    }
+
+    /* Text block */
+    .x-hero-superbloom__content {
+      position: absolute;
+      left: 5vw;
+      bottom: 18vh;
+      z-index: 1;
+      max-width:600px;
+    }
+
+    .x-hero-superbloom__eyebrow {
+      display: block;
+      margin: 0 0 .6rem;
+      font-weight: 600;
+      font-size: 1.2rem;
+      letter-spacing: .072em;
+      text-transform: uppercase;
+      opacity: .9;
+    }
+
+    .x-hero-superbloom__title {
+      margin: 0 0 1.25rem;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: .035em;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+    }
+
+    .x-hero-superbloom__cta {
+      display: inline-block;
+      padding: .6rem 1.4rem;
+      background: #fff;
+      color: #111;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      font-weight: 600;
+      font-size: .9rem;
+      transition: transform .18s ease, background .18s ease, color .18s ease;
+    }
+
+    .x-hero-superbloom__cta:hover {
+      background: #111;
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .x-hero-superbloom__cta:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 600px) {
+      .x-hero-superbloom__content {
+        bottom: 6vh;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .x-hero-superbloom__cta {
+        transition: none;
+      }
+    }
+  </style>
+
+  <!-- Background image (full width, auto height) -->
+  <img
+    src="https://cdn.shopify.com/s/files/1/0623/9718/6166/files/Untitled_design_75.jpg?v=1761473035"
+    alt="Model wearing a star-print dress in a desert setting"
+    class="x-hero-superbloom__bg"
+    loading="eager"
+  >
+
+  <!-- Text overlay -->
+  <div class="x-hero-superbloom__content">
+    <span class="x-hero-superbloom__eyebrow">SPECIAL EDITION</span>
+    <p class="x-hero-superbloom__title">The City to Shore Capsule</p>
+    <a href="/collections/superbloom" class="x-hero-superbloom__cta" aria-label="Shop the Superbloom collection">
+      Find Your Flow
+    </a>
+  </div>
+</section>

@@ -311,6 +311,7 @@
     z-index: var(--layer-overlay);
 
     &[transparent='not-sticky'][data-sticky-state='active'],
+    &:hover,
     /* Only show opaque background when hovering over menu items with children (mega menu)
        Multiple selectors for performance: each simple :has() check is faster than one complex selector with multiple conditions */
     &:has(.mega-menu__list:hover),
@@ -340,7 +341,10 @@
     }
   }
 
-  :is(.header[transparent]:not([data-sticky-state='active']), .header[transparent='always'][data-sticky-state='active'])
+  :is(
+      .header[transparent]:not([data-sticky-state='active']),
+      .header[transparent='always'][data-sticky-state='active']
+    ):not(:hover)
     .header__row:not(
       :has(
           .mega-menu__list:hover,

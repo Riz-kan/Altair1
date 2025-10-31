@@ -205,7 +205,7 @@
   .menu-list:where(:has(.menu-list__list-item:focus-within)),
   .menu-list:where(:has(.menu-list__list-item:not([aria-hidden='true']) .menu-list__link--active)) {
     .menu-list__link {
-      color: rgb(var(--menu-top-level-font-color-rgb) / var(--opacity-subdued-text));
+      color: var(--menu-top-level-font-color);
     }
   }
 
@@ -214,6 +214,10 @@
   .menu-list .menu-list__list-item:where(:hover, :focus-within) .menu-list__link,
   .menu-list .menu-list__list-item[slot='overflow'] .menu-list__link[aria-expanded='true'] {
     color: var(--menu-top-level-font-color);
+  }
+
+  .header-menu .menu-list {
+    --opacity-subdued-text: 1;
   }
 
   .overflow-menu::part(list) {

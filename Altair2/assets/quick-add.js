@@ -1,6 +1,6 @@
 import { morph } from '@theme/morph';
 import { Component } from '@theme/component';
-import { CartUpdateEvent, ThemeEvents } from '@theme/events';
+import { CartUpdateEvent, ThemeEvents, VariantUpdateEvent } from '@theme/events';
 import { DialogComponent, DialogCloseEvent } from '@theme/dialog';
 import { mediaQueryLarge, isMobileBreakpoint, getIOSVersion } from '@theme/utilities';
 
@@ -43,12 +43,14 @@ export class QuickAddComponent extends Component {
     super.connectedCallback();
 
     mediaQueryLarge.addEventListener('change', this.#closeQuickAddModal);
+    this.addEventListener(ThemeEvents.variantUpdate, this.#handleVariantUpdate);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
 
     mediaQueryLarge.removeEventListener('change', this.#closeQuickAddModal);
+    this.removeEventListener(ThemeEvents.variantUpdate, this.#handleVariantUpdate);
     this.#abortController?.abort();
   }
 
@@ -114,13 +116,17 @@ export class QuickAddComponent extends Component {
 
     if (!productGrid) {
       const html = await this.#fetchProductPage(productPageUrl);
-      if (!html) return null;
+      if (!html) {
+        productGrid = this.#cachedContent.get(productPageUrl) || null;
+      } else {
+        const gridElement = html.querySelector('[data-product-grid-content]');
+        if (!gridElement) return null;
 
-      const gridElement = html.querySelector('[data-product-grid-content]');
-      if (!gridElement) return null;
+        productGrid = /** @type {Element} */ (gridElement.cloneNode(true));
+        this.#cachedContent.set(productPageUrl, productGrid);
+      }
 
-      productGrid = /** @type {Element} */ (gridElement.cloneNode(true));
-      this.#cachedContent.set(productPageUrl, productGrid);
+      if (!productGrid) return null;
     }
 
     if (!cloneResult) {
@@ -137,6 +143,10 @@ export class QuickAddComponent extends Component {
    */
   async #fetchProductPage(productPageUrl) {
     if (!productPageUrl) return null;
+
+    if (this.#cachedContent.has(productPageUrl)) {
+      return null;
+    }
 
     // We use this to abort the previous fetch request if it's still pending.
     this.#abortController?.abort();
@@ -226,6 +236,42 @@ export class QuickAddComponent extends Component {
       }
     }
   }
+
+  /**
+   * Updates the cached quick add content when a variant update occurs.
+   * @param {VariantUpdateEvent} event - The variant update event.
+   */
+  #handleVariantUpdate = (event) => {
+    const html = event.detail?.data?.html;
+    if (!html) return;
+
+    const gridElement = html.querySelector('[data-product-grid-content]');
+    if (!gridElement) return;
+
+    /** @type {string | undefined} */
+    const newProductUrl = event.detail?.data?.newProduct?.url;
+    const currentUrl = this.productPageUrl;
+
+    /** @type {string[]} */
+    const cacheKeys = [];
+
+    if (newProductUrl) {
+      cacheKeys.push(newProductUrl);
+    }
+
+    if (currentUrl && !cacheKeys.includes(currentUrl)) {
+      cacheKeys.push(currentUrl);
+    }
+
+    if (!cacheKeys.length) return;
+
+    const [firstCacheKey, ...additionalCacheKeys] = cacheKeys;
+    this.#cachedContent.set(firstCacheKey, /** @type {Element} */ (gridElement.cloneNode(true)));
+
+    for (const cacheKey of additionalCacheKeys) {
+      this.#cachedContent.set(cacheKey, /** @type {Element} */ (gridElement.cloneNode(true)));
+    }
+  };
 }
 
 if (!customElements.get('quick-add-component')) {

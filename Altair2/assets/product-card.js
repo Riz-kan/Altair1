@@ -134,7 +134,6 @@ export class ProductCard extends Component {
     this.updatePrice(event);
     this.#isUnavailableVariantSelected(event);
     this.#updateProductUrl(event);
-    this.refs.quickAdd?.prefetchProductPage(this.productPageUrl);
 
     if (event.target !== this.variantPicker) {
       this.variantPicker?.updateVariantPicker(event.detail.data.html);

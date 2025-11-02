@@ -59,28 +59,10 @@ export class QuickAddComponent extends Component {
   handleClick = async (event) => {
     event.preventDefault();
 
-    const currentUrl = this.productPageUrl;
-
-    // Check if we have cached content for this URL
-    let productGrid = this.#cachedContent.get(currentUrl);
-
-    if (!productGrid) {
-      // Fetch and cache the content
-      const html = await this.fetchProductPage(currentUrl);
-      if (html) {
-        const gridElement = html.querySelector('[data-product-grid-content]');
-        if (gridElement) {
-          // Cache the cloned element to avoid modifying the original
-          productGrid = /** @type {Element} */ (gridElement.cloneNode(true));
-          this.#cachedContent.set(currentUrl, productGrid);
-        }
-      }
-    }
+    const productGrid = await this.#getOrFetchProductGrid(this.productPageUrl);
 
     if (productGrid) {
-      // Use a fresh clone from the cache
-      const freshContent = /** @type {Element} */ (productGrid.cloneNode(true));
-      await this.updateQuickAddModal(freshContent);
+      await this.updateQuickAddModal(productGrid);
     }
 
     this.#openQuickAddModal();
@@ -112,11 +94,48 @@ export class QuickAddComponent extends Component {
   };
 
   /**
-   * Fetches the product page content
-   * @param {string} productPageUrl - The URL of the product page to fetch
-   * @returns {Promise<Document | null>}
+   * Prefetches the product page content and stores it in the cache.
+   * @param {string} productPageUrl - The URL of the product page to prefetch.
    */
-  async fetchProductPage(productPageUrl) {
+  async prefetchProductPage(productPageUrl) {
+    await this.#getOrFetchProductGrid(productPageUrl, { cloneResult: false });
+  }
+
+  /**
+   * Retrieves cached product grid content, fetching and caching it if necessary.
+   * @param {string} productPageUrl - The URL of the product page to retrieve.
+   * @param {{ cloneResult?: boolean }} [options]
+   * @returns {Promise<Element | null>} The cloned product grid content.
+   */
+  async #getOrFetchProductGrid(productPageUrl, { cloneResult = true } = {}) {
+    if (!productPageUrl) return null;
+
+    let productGrid = this.#cachedContent.get(productPageUrl);
+
+    if (!productGrid) {
+      const html = await this.#fetchProductPage(productPageUrl);
+      if (!html) return null;
+
+      const gridElement = html.querySelector('[data-product-grid-content]');
+      if (!gridElement) return null;
+
+      productGrid = /** @type {Element} */ (gridElement.cloneNode(true));
+      this.#cachedContent.set(productPageUrl, productGrid);
+    }
+
+    if (!cloneResult) {
+      return productGrid;
+    }
+
+    return /** @type {Element} */ (productGrid.cloneNode(true));
+  }
+
+  /**
+   * Fetches the product page HTML.
+   * @param {string} productPageUrl - The URL of the product page to fetch.
+   * @returns {Promise<Document | null>} The parsed HTML document.
+   */
+  async #fetchProductPage(productPageUrl) {
     if (!productPageUrl) return null;
 
     // We use this to abort the previous fetch request if it's still pending.
@@ -133,15 +152,13 @@ export class QuickAddComponent extends Component {
       }
 
       const responseText = await response.text();
-      const html = new DOMParser().parseFromString(responseText, 'text/html');
-
-      return html;
+      return new DOMParser().parseFromString(responseText, 'text/html');
     } catch (error) {
       if (error.name === 'AbortError') {
         return null;
-      } else {
-        throw error;
       }
+
+      throw error;
     } finally {
       this.#abortController = null;
     }

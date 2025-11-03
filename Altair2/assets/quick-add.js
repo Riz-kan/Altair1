@@ -66,6 +66,8 @@ export class QuickAddComponent extends Component {
     chooseButton?.setAttribute('disabled', '');
 
     let shouldOpenModal = false;
+    /** @type {QuickAddDialog | null} */
+    let dialogComponent = null;
 
     try {
       const currentUrl = this.productPageUrl;
@@ -99,8 +101,22 @@ export class QuickAddComponent extends Component {
       chooseButton?.removeAttribute('aria-busy');
       chooseButton?.removeAttribute('disabled');
 
+      const productCardContent = this.closest('product-card')?.querySelector('.product-card__content');
+      if (!dialogComponent) {
+        const dialogElement = document.getElementById('quick-add-dialog');
+        dialogComponent = dialogElement instanceof QuickAddDialog ? dialogElement : null;
+      }
+
+      if (dialogComponent) {
+        if (shouldOpenModal && productCardContent instanceof HTMLElement) {
+          dialogComponent.prepareToOpenFromElement(productCardContent);
+        } else {
+          dialogComponent.prepareToOpenFromElement(null);
+        }
+      }
+
       if (shouldOpenModal) {
-        this.#openQuickAddModal();
+        this.#openQuickAddModal(dialogComponent ?? undefined);
       }
     }
   };
@@ -114,8 +130,7 @@ export class QuickAddComponent extends Component {
     });
   }
 
-  #openQuickAddModal = () => {
-    const dialogComponent = document.getElementById('quick-add-dialog');
+  #openQuickAddModal = (dialogComponent = document.getElementById('quick-add-dialog')) => {
     if (!(dialogComponent instanceof QuickAddDialog)) return;
 
     this.#stayVisibleUntilDialogCloses(dialogComponent);
@@ -237,6 +252,34 @@ if (!customElements.get('quick-add-component')) {
 class QuickAddDialog extends DialogComponent {
   #abortController = new AbortController();
 
+  /**
+   * Stores the geometry of the triggering element so the modal can animate from it.
+   * @param {HTMLElement | null} element
+   */
+  prepareToOpenFromElement(element) {
+    if (!(element instanceof HTMLElement)) {
+      this.#clearHostOriginData();
+      return;
+    }
+
+    const rect = element.getBoundingClientRect();
+
+    this.setAttribute('data-transition-from-card', 'true');
+    this.style.setProperty('--qa-origin-top', `${rect.top + window.scrollY}px`);
+    this.style.setProperty('--qa-origin-left', `${rect.left + window.scrollX}px`);
+    this.style.setProperty('--qa-origin-width', `${rect.width}px`);
+    this.style.setProperty('--qa-origin-height', `${rect.height}px`);
+
+    const originStyles = window.getComputedStyle(element);
+    const borderRadius = originStyles.borderRadius;
+
+    if (borderRadius) {
+      this.style.setProperty('--qa-origin-radius', borderRadius);
+    } else {
+      this.style.removeProperty('--qa-origin-radius');
+    }
+  }
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -251,6 +294,26 @@ class QuickAddDialog extends DialogComponent {
 
     this.#abortController.abort();
     this.removeEventListener(DialogCloseEvent.eventName, this.#handleDialogClose);
+  }
+
+  showDialog() {
+    /** @type {HTMLDialogElement | null} */
+    const modalElement = this.querySelector('.quick-add-modal');
+    const shouldAnimateFromCard = this.hasAttribute('data-transition-from-card') && modalElement instanceof HTMLDialogElement;
+
+    if (shouldAnimateFromCard && modalElement) {
+      this.#applyOriginToModal(modalElement);
+    }
+
+    const result = super.showDialog();
+
+    if (shouldAnimateFromCard && modalElement) {
+      requestAnimationFrame(() => {
+        this.#prepareModalAnimation(modalElement);
+      });
+    }
+
+    return result;
   }
 
   /**
@@ -276,6 +339,8 @@ class QuickAddDialog extends DialogComponent {
   };
 
   #handleDialogClose = () => {
+    this.#clearTransitionState();
+
     const iosVersion = getIOSVersion();
     /**
      * This is a patch to solve an issue with the UI freezing when the dialog is closed.
@@ -295,6 +360,101 @@ class QuickAddDialog extends DialogComponent {
       }
     });
   };
+
+  /**
+   * Copies the stored geometry from the host element onto the modal element.
+   * @param {HTMLDialogElement} modalElement
+   */
+  #applyOriginToModal(modalElement) {
+    const originTop = this.style.getPropertyValue('--qa-origin-top');
+    const originLeft = this.style.getPropertyValue('--qa-origin-left');
+    const originWidth = this.style.getPropertyValue('--qa-origin-width');
+    const originHeight = this.style.getPropertyValue('--qa-origin-height');
+    const originRadius = this.style.getPropertyValue('--qa-origin-radius');
+
+    if (originTop) modalElement.style.setProperty('--qa-origin-top', originTop);
+    if (originLeft) modalElement.style.setProperty('--qa-origin-left', originLeft);
+    if (originWidth) modalElement.style.setProperty('--qa-origin-width', originWidth);
+    if (originHeight) modalElement.style.setProperty('--qa-origin-height', originHeight);
+    if (originRadius) {
+      modalElement.style.setProperty('--qa-origin-radius', originRadius);
+    } else {
+      modalElement.style.removeProperty('--qa-origin-radius');
+    }
+
+    modalElement.classList.add('opening-from-card');
+    modalElement.removeAttribute('data-transition-from-card');
+  }
+
+  /**
+   * Computes the translation/scale needed to animate the modal from the triggering card.
+   * @param {HTMLDialogElement} modalElement
+   */
+  #prepareModalAnimation(modalElement) {
+    const modalRect = modalElement.getBoundingClientRect();
+    const originTop = parseFloat(modalElement.style.getPropertyValue('--qa-origin-top'));
+    const originLeft = parseFloat(modalElement.style.getPropertyValue('--qa-origin-left'));
+    const originWidth = parseFloat(modalElement.style.getPropertyValue('--qa-origin-width'));
+    const originHeight = parseFloat(modalElement.style.getPropertyValue('--qa-origin-height'));
+
+    if ([originTop, originLeft, originWidth, originHeight].some((value) => Number.isNaN(value))) {
+      modalElement.removeAttribute('data-transition-from-card');
+      return;
+    }
+
+    const translateX = originLeft - (modalRect.left + window.scrollX);
+    const translateY = originTop - (modalRect.top + window.scrollY);
+    const scaleX = modalRect.width ? Math.max(originWidth / modalRect.width, 0.01) : 1;
+    const scaleY = modalRect.height ? Math.max(originHeight / modalRect.height, 0.01) : 1;
+
+    modalElement.style.setProperty('--qa-origin-translate-x', `${translateX}px`);
+    modalElement.style.setProperty('--qa-origin-translate-y', `${translateY}px`);
+    modalElement.style.setProperty('--qa-origin-scale-x', `${scaleX}`);
+    modalElement.style.setProperty('--qa-origin-scale-y', `${scaleY}`);
+    modalElement.style.setProperty('--qa-open-duration', '0.45s');
+    modalElement.style.setProperty('--qa-content-delay', '0.22s');
+
+    const modalStyles = window.getComputedStyle(modalElement);
+    const finalRadius = modalStyles.borderRadius;
+    if (finalRadius) {
+      modalElement.style.setProperty('--qa-final-radius', finalRadius);
+    }
+
+    modalElement.setAttribute('data-transition-from-card', 'true');
+  }
+
+  #clearTransitionState() {
+    this.#clearHostOriginData();
+
+    /** @type {HTMLDialogElement | null} */
+    const modalElement = this.querySelector('.quick-add-modal');
+    if (!modalElement) return;
+
+    modalElement.classList.remove('opening-from-card');
+    modalElement.removeAttribute('data-transition-from-card');
+
+    modalElement.style.removeProperty('--qa-origin-top');
+    modalElement.style.removeProperty('--qa-origin-left');
+    modalElement.style.removeProperty('--qa-origin-width');
+    modalElement.style.removeProperty('--qa-origin-height');
+    modalElement.style.removeProperty('--qa-origin-translate-x');
+    modalElement.style.removeProperty('--qa-origin-translate-y');
+    modalElement.style.removeProperty('--qa-origin-scale-x');
+    modalElement.style.removeProperty('--qa-origin-scale-y');
+    modalElement.style.removeProperty('--qa-origin-radius');
+    modalElement.style.removeProperty('--qa-final-radius');
+    modalElement.style.removeProperty('--qa-open-duration');
+    modalElement.style.removeProperty('--qa-content-delay');
+  }
+
+  #clearHostOriginData() {
+    this.removeAttribute('data-transition-from-card');
+    this.style.removeProperty('--qa-origin-top');
+    this.style.removeProperty('--qa-origin-left');
+    this.style.removeProperty('--qa-origin-width');
+    this.style.removeProperty('--qa-origin-height');
+    this.style.removeProperty('--qa-origin-radius');
+  }
 }
 
 if (!customElements.get('quick-add-dialog')) {

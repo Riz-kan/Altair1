@@ -59,31 +59,50 @@ export class QuickAddComponent extends Component {
   handleClick = async (event) => {
     event.preventDefault();
 
-    const currentUrl = this.productPageUrl;
+    const chooseButton = /** @type {HTMLButtonElement | null} */ (this.querySelector('.quick-add__button--choose'));
 
-    // Check if we have cached content for this URL
-    let productGrid = this.#cachedContent.get(currentUrl);
+    this.toggleAttribute('loading', true);
+    chooseButton?.setAttribute('aria-busy', 'true');
+    chooseButton?.setAttribute('disabled', '');
 
-    if (!productGrid) {
-      // Fetch and cache the content
-      const html = await this.fetchProductPage(currentUrl);
-      if (html) {
-        const gridElement = html.querySelector('[data-product-grid-content]');
-        if (gridElement) {
-          // Cache the cloned element to avoid modifying the original
-          productGrid = /** @type {Element} */ (gridElement.cloneNode(true));
-          this.#cachedContent.set(currentUrl, productGrid);
+    let shouldOpenModal = false;
+
+    try {
+      const currentUrl = this.productPageUrl;
+
+      // Check if we have cached content for this URL
+      let productGrid = this.#cachedContent.get(currentUrl);
+
+      if (!productGrid) {
+        // Fetch and cache the content
+        const html = await this.fetchProductPage(currentUrl);
+        if (html) {
+          const gridElement = html.querySelector('[data-product-grid-content]');
+          if (gridElement) {
+            // Cache the cloned element to avoid modifying the original
+            productGrid = /** @type {Element} */ (gridElement.cloneNode(true));
+            this.#cachedContent.set(currentUrl, productGrid);
+          }
         }
       }
-    }
 
-    if (productGrid) {
-      // Use a fresh clone from the cache
-      const freshContent = /** @type {Element} */ (productGrid.cloneNode(true));
-      await this.updateQuickAddModal(freshContent);
-    }
+      if (productGrid) {
+        // Use a fresh clone from the cache
+        const freshContent = /** @type {Element} */ (productGrid.cloneNode(true));
+        await this.updateQuickAddModal(freshContent);
+        shouldOpenModal = true;
+      }
+    } catch (error) {
+      console.error('QuickAddComponent failed to load product content', error);
+    } finally {
+      this.removeAttribute('loading');
+      chooseButton?.removeAttribute('aria-busy');
+      chooseButton?.removeAttribute('disabled');
 
-    this.#openQuickAddModal();
+      if (shouldOpenModal) {
+        this.#openQuickAddModal();
+      }
+    }
   };
 
   /** @param {QuickAddDialog} dialogComponent */

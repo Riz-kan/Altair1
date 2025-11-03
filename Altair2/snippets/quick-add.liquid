@@ -113,6 +113,7 @@
           name="add"
           on:click="quick-add-component/handleClick"
         >
+          <span class="quick-add__spinner" aria-hidden="true"></span>
           <span
             class="add-to-cart-text"
           >
@@ -190,6 +191,37 @@
     .quick-add[stay-visible] & {
       display: grid;
     }
+  }
+
+  .quick-add__spinner {
+    display: none;
+    grid-row: 1 / span 1;
+    grid-column: 1 / span 1;
+    place-self: center;
+    width: 1.5rem;
+    aspect-ratio: 1;
+    border-radius: 999px;
+    border: 0.2rem solid currentColor;
+    border-block-start-color: transparent;
+    border-top-color: transparent;
+  }
+
+  quick-add-component[loading] .quick-add__spinner {
+    display: inline-flex;
+    animation: quick-add-spinner-rotate 0.8s linear infinite;
+  }
+
+  quick-add-component[loading] .quick-add__button {
+    pointer-events: none;
+    opacity: var(--opacity-disabled, 0.5);
+  }
+
+  quick-add-component[loading] .quick-add__button--choose .add-to-cart-text {
+    visibility: hidden;
+  }
+
+  quick-add-component[loading] .quick-add__button--choose {
+    cursor: progress;
   }
 
   .quick-add__button .add-to-cart-text {
@@ -319,6 +351,12 @@
       opacity: 0;
       transform: translateX(-1em);
       position: absolute;
+    }
+  }
+
+  @keyframes quick-add-spinner-rotate {
+    to {
+      transform: rotate(360deg);
     }
   }
 {% endstylesheet %}

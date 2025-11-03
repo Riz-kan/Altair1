@@ -70,6 +70,14 @@
     animation: modalSlideOutTop var(--animation-speed) var(--animation-easing) forwards;
   }
 
+  @media (prefers-reduced-motion: no-preference) and (min-width: 750px) {
+    quick-add-dialog[data-transition-from-card]
+      .quick-add-modal.dialog-closing[data-transition-from-card] {
+      animation: quick-add-close-to-card var(--qa-open-duration, 0.45s) var(--animation-easing) forwards;
+      transform-origin: top left;
+    }
+  }
+
   .quick-add-modal__close {
     position: absolute;
     top: var(--margin-2xs);
@@ -452,6 +460,21 @@
       opacity: 1;
       transform: translate3d(0, 0, 0) scale(1);
       clip-path: inset(0 round var(--qa-final-radius));
+    }
+  }
+
+  @keyframes quick-add-close-to-card {
+    0% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      clip-path: inset(0 round var(--qa-final-radius));
+    }
+
+    100% {
+      opacity: 0;
+      transform: translate3d(var(--qa-origin-translate-x, 0), var(--qa-origin-translate-y, -1rem), 0)
+        scale(var(--qa-origin-scale-x, 0.9), var(--qa-origin-scale-y, 0.9));
+      clip-path: inset(0 round var(--qa-origin-radius));
     }
   }
 

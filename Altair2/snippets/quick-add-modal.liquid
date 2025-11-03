@@ -27,6 +27,10 @@
     overflow: hidden;
     min-height: 500px;
     box-shadow: 0 5px 30px rgb(0 0 0 / var(--opacity-15));
+    --qa-content-delay: 0.1s;
+    --qa-open-duration: var(--animation-speed);
+    --qa-origin-radius: var(--style-radius-card, var(--radius-base));
+    --qa-final-radius: var(--style-radius-popover, var(--radius-base));
 
     @media screen and (max-width: 750px) {
       position: fixed;
@@ -52,6 +56,14 @@
 
   .quick-add-modal[open] {
     animation: modalSlideInTop var(--animation-speed) var(--animation-easing) forwards;
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (min-width: 750px) {
+    quick-add-dialog[data-transition-from-card]
+      .quick-add-modal.opening-from-card[data-transition-from-card] {
+      animation: quick-add-open-from-card var(--qa-open-duration, 0.45s) var(--animation-easing) forwards;
+      transform-origin: top left;
+    }
   }
 
   .quick-add-modal.dialog-closing {
@@ -179,7 +191,7 @@
 
     dialog[open] & {
       animation: fadeSlideIn 0.3s var(--animation-timing-fade-in) both;
-      animation-delay: 0.1s;
+      animation-delay: var(--qa-content-delay, 0.1s);
     }
 
     @media screen and (max-width: 750px) {
@@ -197,6 +209,14 @@
 
   .quick-add-modal__content .product-details :is(.view-product-title, .buy-buttons-block) {
     flex: 0 0 auto;
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (min-width: 750px) {
+    quick-add-dialog[data-transition-from-card]
+      .quick-add-modal.opening-from-card[data-transition-from-card]
+      .product-details {
+      animation-delay: var(--qa-content-delay, 0.22s);
+    }
   }
 
   .quick-add-modal__content .product-details .variant-picker {
@@ -418,6 +438,21 @@
   .quick-add-modal__content .text-block.rte:not(product-price),
   .quick-add-modal__content .view-more-details__wrapper {
     display: none;
+  }
+
+  @keyframes quick-add-open-from-card {
+    0% {
+      opacity: 0;
+      transform: translate3d(var(--qa-origin-translate-x, 0), var(--qa-origin-translate-y, -1rem), 0)
+        scale(var(--qa-origin-scale-x, 0.9), var(--qa-origin-scale-y, 0.9));
+      clip-path: inset(0 round var(--qa-origin-radius));
+    }
+
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+      clip-path: inset(0 round var(--qa-final-radius));
+    }
   }
 
   @keyframes fadeSlideIn {
